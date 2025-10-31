@@ -1,0 +1,112 @@
+IRSSI： IRC 命令是不区分大小写的
+/set nick "t" 
+/set user_name  "titi"
+/connect localhost 端口 密码 nick
+
+按下 Alt + 1 到 Alt + 0（即 1~10）切换到对应的频道窗口
+（比如你加入了 3 个频道：#a、#b、#c，那么 Alt + 1 是第一个窗口，可能是 server 窗口，Alt + 2 是 #a，Alt + 3 是 #b，依此类推）
+
+CAP LS: 这个命令是客户端向服务器请求列出服务器所支持的扩展功能。客户端发出这个命令，服务器会响应并列出它支持的扩展。
+CAP REQ :multi-prefix: 在你看到的日志中，客户端请求启用 multi-prefix 扩展功能。该扩展允许在一个频道内使用多个前缀（例如管理员或其他特权用户的标识符）。
+CAP END: 客户端发出此命令来表示扩展功能协商的结束，服务器将根据客户端请求的扩展来更新连接状态。
+测试BOT的命令：
+
+/join #test
+!join 把BOT叫进来
+!help botcommand的列表
+！rpn 5 3 +
+！whoami
+！flip
+!troll
+
+
+/nick alice
+/USER alice 0 * :Alice Real Name
+/msg bob Hello Bob!
+/join #test
+/msg #test Hello everyone!
+
+/topic #test This is our test channel. 设置频道 topic
+/topic #test 查看频道 topic
+
+如果不是管理员要先进频道在测试
+/mode #test +t   // 只有管理员能修改 topic
+/mode #test -t   // 不用管理员都能修改 topic
+/mode #test +i   // 设置为“invite only”
+/mode #test +l 10 //设置人数
+/mode #test +k 123 //设置密码123
+/mode #test +o bob //设置bob为管理员
+
+
+/invite charlie #test     // 邀请用户进私密频道
+/kick #test bob :Spamming // 踢出 bob 并附带原因
+
+发送文件给某人（双方都用 IRSSI）：
+/dcc send bob file.txt（如果不在同目录，需要给出路径）
+接收方会收到 DCC GET 请求（需要设置保存路径）：
+/set dcc_download_path ~/downloads
+/save
+/dcc get 发送人 file.txt  
+去路径查看文件
+
+
+测试挂起
+control z 挂起 
+fg 恢复
+
+/NOTICE user1 :This is a test notice to a user.
+/NOTICE #test :This is a test notice to a channel.
+
+/part [#channel] [message]
+
+/ping localhost
+
+/quit 
+/quit :message
+----------------------------------------------------------------------------------------------------
+
+NC 命令
+nc localhost 端口
+PASS 密码
+NICK alice
+USER alice 0 * :Alice Real Name
+JOIN #test
+PRIVMSG #test :!join
+PRIVMSG #test :!help
+PRIVMSG #test :!rpn 5 3 +
+PRIVMSG #test :!whoami
+PRIVMSG #test :!flip
+PRIVMSG #test :!troll
+
+
+PRIVMSG bob :Hello Bob!
+
+MODE #test +t
+TOPIC #channel_name :Your topic message here
+MODE #test -t 不用管理员都能修改 topic
+
+MODE #test +i
+MODE #test +l 10
+MODE #test -l 10
+MODE #test +k 123
+MODE #test -k
+MODE #test +o bob
+MODE #test -o bob
+
+INVITE charlie #test
+
+KICK #test bob :Spamming
+
+CTRL+Z
+可以尝试发信息给挂起的客户端信息
+fg 
+能收到信息
+
+
+NOTICE user1 :This is a test notice to a user.
+NOTICE #channel :This is a test notice to the channel.
+
+PART #test :Leaving the channel
+PING localhost
+
+QUIT :message

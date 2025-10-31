@@ -1,0 +1,30 @@
+# Build artifacts
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Dependency files
+*.d
+
+# Build directories
+build/
+
+# Binaries
+ircserv
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
