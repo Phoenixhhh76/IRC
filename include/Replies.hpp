@@ -84,6 +84,10 @@
 #define ERR_CHANOPRIVSNEEDED(server, ch)     (":" + (server) + " 482 " + (ch) + " :You're not channel operator")
 // 421 ERR_UNKNOWNCOMMAND（未知指令，可選）
 #define ERR_UNKNOWNCOMMAND(server, cmd)      (":" + (server) + " 421 " + (cmd) + " :Unknown command")
+// 472 ERR_UNKNOWNMODE（未知模式字元）
+#define ERR_UNKNOWNMODE(server, nick, mode)  (":" + (server) + " 472 " + (nick) + " " + (mode) + " :is unknown mode char to me")
+// 696 ERR_INVALIDMODEPARAM（無效模式參數）
+#define ERR_INVALIDMODEPARAM(server, nick, ch, mode, param, desc) (":" + (server) + " 696 " + (nick) + " " + (ch) + " " + (mode) + " " + (param) + " :" + (desc))
 
 // ======================= 常見正向 numerics（可選/加分） =======================
 // 352 RPL_WHOREPLY

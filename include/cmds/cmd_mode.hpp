@@ -10,7 +10,7 @@ private:
     void handleChannelMode(Server& srv, Client& cl, const IrcMessage& m);
     void handleUserMode(Server& srv, Client& cl, const IrcMessage& m);
     void processChannelMode(Server& srv, Client& cl, const IrcMessage& m, Channel& chan);
-    void applyMode(Server& srv, Channel& chan, char mode, bool add, const IrcMessage& m);
+    void applyMode(Server& srv, Client& cl, Channel& chan, char mode, bool add, const IrcMessage& m);
 };
 
 #endif

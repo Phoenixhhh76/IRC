@@ -104,15 +104,16 @@ void CmdMode::processChannelMode(Server& srv, Client& cl, const IrcMessage& m, C
     }
 
     // 應用模式變更
-    applyMode(srv, chan, mode, add, m);
+    applyMode(srv, cl, chan, mode, add, m);
 
     // 廣播 MODE 變化，使用完整 user 前綴，避免缺 host
     std::string args = (m.params.size() > 2 ? m.params[2] : "");
     srv.broadcastToChannel(ch, cl.getFullPrefix() + " MODE " + ch + " " + modes + (args.empty() ? "" : (" " + args)), -1);
 }
 
-void CmdMode::applyMode(Server& srv, Channel& chan, char mode, bool add, const IrcMessage& m) {
+void CmdMode::applyMode(Server& srv, Client& cl, Channel& chan, char mode, bool add, const IrcMessage& m) {
     int targetFd = -1;
+    const std::string& ch = m.params[0];
     switch (mode) {
         case 'i': // Invite-only
             std::cout << "[DEBUG] Setting channel mode +i (invite-only): " << (add ? "ON" : "OFF") << std::endl;
@@ -125,16 +126,54 @@ void CmdMode::applyMode(Server& srv, Channel& chan, char mode, bool add, const I
         case 'k': // Channel key
             if (add && m.params.size() >= 3) {
                 chan.setKey(m.params[2]);
+            } else if (add && m.params.size() < 3) {
+                // +k requires a parameter
+                cl.sendLine(ERR_INVALIDMODEPARAM(srv.serverName(), cl.getNick(), ch, "k", "*", "Key parameter required"));
+                srv.enableWriteForFd(cl.fd());
+                return;
             } else if (!add) {
                 chan.setKey("");
             }
             break;
         case 'l': // User limit
             if (add && m.params.size() >= 3) {
-                size_t limit = static_cast<size_t>(atoi(m.params[2].c_str()));
-                chan.setUserLimit(limit);
+                // Parse the limit parameter
+                const std::string& limitStr = m.params[2];
+
+                // Check for empty parameter
+                if (limitStr.empty()) {
+                    cl.sendLine(ERR_INVALIDMODEPARAM(srv.serverName(), cl.getNick(), ch, "l", limitStr, "Parameter cannot be empty"));
+                    srv.enableWriteForFd(cl.fd());
+                    return;
+                }
+
+                // Parse the number
+                char* endptr;
+                long limit = strtol(limitStr.c_str(), &endptr, 10);
+
+                // Check if the parameter is a valid number
+                if (*endptr != '\0') {
+                    cl.sendLine(ERR_INVALIDMODEPARAM(srv.serverName(), cl.getNick(), ch, "l", limitStr, "Invalid number format"));
+                    srv.enableWriteForFd(cl.fd());
+                    return;
+                }
+
+                // Check for negative numbers
+                if (limit < 0) {
+                    cl.sendLine(ERR_INVALIDMODEPARAM(srv.serverName(), cl.getNick(), ch, "l", limitStr, "Limit cannot be negative"));
+                    srv.enableWriteForFd(cl.fd());
+                    return;
+                }
+
+                // Set the limit (0 means no limit, which effectively disables +l)
+                chan.setUserLimit(static_cast<size_t>(limit));
+            } else if (add && m.params.size() < 3) {
+                // +l requires a parameter
+                cl.sendLine(ERR_INVALIDMODEPARAM(srv.serverName(), cl.getNick(), ch, "l", "*", "Limit parameter required"));
+                srv.enableWriteForFd(cl.fd());
+                return;
             } else if (!add) {
-                chan.setUserLimit(0);
+                chan.setUserLimit(0);  // -l removes the limit
             }
             break;
         case 'o': // Operator
@@ -152,7 +191,12 @@ void CmdMode::applyMode(Server& srv, Channel& chan, char mode, bool add, const I
             }
             break;
         default:
-            // 未知 mode，忽略
+            // 未知 mode，發送錯誤訊息
+            {
+                std::string modeStr(1, mode);
+                cl.sendLine(ERR_UNKNOWNMODE(srv.serverName(), cl.getNick(), modeStr));
+                srv.enableWriteForFd(cl.fd());
+            }
             break;
     }
 }
