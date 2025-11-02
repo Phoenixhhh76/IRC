@@ -78,7 +78,7 @@ void Server::sendWelcome(Client& cl) {
 }
 
 const std::string& Server::serverName() const { return _servername; }
-// ========== dispatcher ==========
+// ========== dispatcher for IRC clientcommands ==========
 void Server::initCommands() {
     registerAllCommands(_cmds, *this);
 }
@@ -88,17 +88,15 @@ void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
 
     std::cout << "[DEBUG] Server received command: '" << cmd << "' from fd=" << cl.fd() << std::endl;
 
-
     if (!cl.registered()) {
-
-        if (!cl.hasPass()
-            && (cmd == "NICK" || cmd == "USER")) {
+        if (!cl.hasPass() && (cmd == "NICK" || cmd == "USER")) { 
+            //if the client has not passed the password, and the command is NICK or USER, send 464
             cl.sendLine(ERR_PASSWDMISMATCH(_servername));
             enableWriteForFd(cl.fd());
             return;
         }
-
         if (cmd != "PASS" && cmd != "NICK" && cmd != "USER" && cmd != "PING" && cmd != "CAP" && cmd != "QUIT") {
+            //if the command is not PASS, NICK, USER, PING, CAP, or QUIT, send 451
             cl.sendLine(ERR_NOTREGISTERED(_servername));
             enableWriteForFd(cl.fd());
             std::cout << "[DEBUG] Command '" << cmd << "' rejected (not registered), sent 451" << std::endl;
@@ -342,6 +340,7 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
         Client *cl = it->second;
 
         if (!cl->readFromSocket()) { // 對端關閉或讀錯
+            std::cout << "[DEBUG] Marking client idx=" << idx << " fd=" << fd << " for close" << std::endl;
             toCloseIdx.push_back(idx);
             return;
         }
@@ -399,8 +398,13 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
 }
 
 void Server::closeClient(size_t idx) {
-    if (idx >= _pfds.size()) return;
+    std::cout << "[DEBUG] closeClient called for idx=" << idx << std::endl;
+    if (idx >= _pfds.size()) {
+        std::cout << "[DEBUG] WARNING: idx >= _pfds.size() (" << idx << " >= " << _pfds.size() << ")" << std::endl;
+        return;
+    }
     int fd = _pfds[idx].fd;
+    std::cout << "[DEBUG] Closing client fd=" << fd << std::endl;
 
     // DCC socket 關閉處理
     std::map<int, DccSession>::iterator ds = _dccByFd.find(fd);

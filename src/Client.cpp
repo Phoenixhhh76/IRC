@@ -39,6 +39,7 @@ bool Client::readFromSocket() {
         }
         if (n == 0) {
             // 對端關閉
+            std::cout << "[DEBUG] Client fd=" << _fd << " (" << _nick << ") recv EOF, closing" << std::endl;
             return false;
         }
         // n < 0
