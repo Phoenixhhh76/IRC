@@ -11,7 +11,7 @@ std::string toLower(const std::string& str);
 // 允許英數 + "[]\\`^{}|-"；不允許空白）
 bool isValidNick(const std::string& nick);
 
-static inline bool isCtl(unsigned char c);
+static inline bool isCtl(unsigned char c) { return c < 0x20 || c == 0x7F; }
 
 bool isValidChannelName(const std::string& ch);
 

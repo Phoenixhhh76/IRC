@@ -35,8 +35,6 @@ bool isValidNick(const std::string& nick) {
     return true;
 }
 
-static inline bool isCtl(unsigned char c){ return c < 0x20 || c == 0x7F; }
-
 bool isValidChannelName(const std::string& ch) {
     if (ch.size() < 2 || ch.size() > 50) return false;   // 長度
     if (ch[0] != '#') return false;                      // 前綴
