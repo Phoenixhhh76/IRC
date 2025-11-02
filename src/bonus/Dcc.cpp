@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <ctime>
 #include <cstdlib>
 #include <cstring>
@@ -71,8 +72,7 @@ void Server::handleDccSend(int fd, const IrcMessage& m) {
         enableWriteForFd(fd);
         return;
     }
-    int flags = fcntl(s, F_GETFL, 0);
-    if (flags < 0 || fcntl(s, F_SETFL, flags | O_NONBLOCK) < 0) {
+    if (fcntl(s, F_SETFL, O_NONBLOCK) < 0) {
         ::close(s);
         it->second->sendLine(":" + _servername + " NOTICE " + it->second->getNick() + " :DCC set nonblock failed");
         enableWriteForFd(fd);
