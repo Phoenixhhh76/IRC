@@ -4,24 +4,24 @@
 #include <string>
 #include <csignal>
 
-// 工具函数：将字符串转换为小写
+// Utility function: convert string to lowercase
 std::string toLower(const std::string& str);
 
-// RFC 2812 的 NICK 合法性檢查（長度 1..9；首字非數字/'-'；
-// 允許英數 + "[]\\`^{}|-"；不允許空白）
+// RFC 2812 NICK validity check (length 1..9; first char not digit/'-';
+// Allow alphanumeric + "[]\\`^{}|-"; no whitespace)
 bool isValidNick(const std::string& nick);
 
 static inline bool isCtl(unsigned char c) { return c < 0x20 || c == 0x7F; }
 
 bool isValidChannelName(const std::string& ch);
 
-// 构建完整的用户前缀 (:nick!user@host)
+// Build complete user prefix (:nick!user@host)
 std::string buildPrefix(const std::string& nick, const std::string& user, const std::string& host);
 
-// 规范化频道名（RFC1459 casemapping）
-// - 转小写 A-Z -> a-z
-// - 将 '{' 映射为 '['， '}' 映射为 ']'， '|' 映射为 '\\'
-// 这样 "#Test", "#test", "#Te{t" 与 "#Te[t" 会被当成同一频道键值。
+// Normalize channel name (RFC1459 casemapping)
+// - Lowercase A-Z -> a-z
+// - Map '{' to '[', '}' to ']', '|' to '\\'
+// So "#Test", "#test", "#Te{t" and "#Te[t" are treated as same channel key.
 std::string normalizeChannelName(const std::string& name);
 
 // ====== Graceful shutdown support ======

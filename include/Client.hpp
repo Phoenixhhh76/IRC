@@ -13,13 +13,13 @@
 class Client {
 private:
     int         _fd;
-    std::string _inbuf;    // 收到但尚未切出完整行的資料
-    std::string _outbuf;   // 待傳送資料（可能包含多行）
+    std::string _inbuf;    // Received but not yet split into complete lines
+    std::string _outbuf;   // Data to send (may contain multiple lines)
     std::string _nick;
     std::string _user;
     std::string _realname;
     std::string _host;
-    std::set<std::string> _channels;   // client 所屬的頻道名稱
+    std::set<std::string> _channels;   // Channel names this client belongs to
 
     bool _isAuthenticated;
     bool _hasPass;
@@ -40,24 +40,24 @@ public:
 
     // Note: copy ctor / assignment intentionally NOT declared/implemented.
     // Client is non-copyable in this C++98 codebase because it owns a socket fd.
-    void closeNow();// 明確關閉 socket（將 _fd 設為 -1，避免二次關閉 broken pipe）
+    void closeNow();// Explicitly close socket (set _fd to -1, avoid double close broken pipe)
 
-    // 從 socket 讀資料到 _inbuf；回傳：true=連線仍在，false=應關閉（對端關閉或讀錯）
+    // Read data from socket to _inbuf; return: true=connection alive, false=should close (peer closed or read error)
     bool readFromSocket();
 
-    // 切出一行（不含結尾的 CRLF）。有行則回 true 並放入 out；沒有完整行回 false
+    // Extract one line (without trailing CRLF). Return true and put in out if has line; return false if no complete line
     bool popLine(std::string& out);
 
-    // 把 _outbuf 的內容盡量送出；錯誤（非 EAGAIN/EWOULDBLOCK）則丟例外或交由外層處理
+    // Send as much of _outbuf as possible; error (not EAGAIN/EWOULDBLOCK) throws exception or handled by upper layer
     void flushOutbuf();
 
-    // 是否還有待發資料
+    // Whether there's data to send
     bool isOutbufEmpty() const;
 
-    // 佇列一行待發資料（自動補上 \r\n）
+    // Queue one line to send (automatically append \r\n)
     void sendLine(const std::string& line);
 
-    // 也可直接佇列原始位元組（不自動加 CRLF）
+    // Can also directly queue raw bytes (don't auto-add CRLF)
     void appendRaw(const std::string& data);
 
     void setPassOk();
@@ -68,7 +68,7 @@ public:
     const std::string& getHost() const;
     void setHost(const std::string& h);
     const std::string& getRealname() const;
-    std::string getFullPrefix() const;  // 返回 :nick!user@host 格式
+    std::string getFullPrefix() const;  // Return :nick!user@host format
 
 
     bool hasNick() const;

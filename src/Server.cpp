@@ -29,7 +29,7 @@ Server::Server(int port, const std::string& password)
 }
 Server::~Server() {
     // Clean up any remaining heap-allocated Client objects
-    // 先清理仍存在的 DCC 會話，避免 FD 泄漏
+    // First clean up remaining DCC sessions to avoid FD leaks
     for (std::map<int, DccSession>::iterator ds = _dccByFd.begin(); ds != _dccByFd.end(); ++ds) {
         if (ds->second.ofs && ds->second.ofs->is_open()) ds->second.ofs->close();
         if (ds->second.sockFd >= 0) ::close(ds->second.sockFd);
@@ -60,14 +60,14 @@ bool Server::isNickInUse(const std::string& nick) const {
 }
 
 void Server::takeNick(Client& cl, const std::string& newNick) {
-    // 移除舊 nick
+    // Remove old nick
     if (cl.hasNick()) {
         std::string oldLower = toLower(cl.getNick());
         std::map<std::string,int>::iterator it = _nick2fd.find(oldLower);
         if (it != _nick2fd.end() && it->second == cl.fd())
             _nick2fd.erase(it);
     }
-    // 設置新 nick（保留原大小寫給顯示）
+    // Set new nick (preserve original case for display)
     cl.setNick(newNick);
     _nick2fd[toLower(newNick)] = cl.fd();
 }
@@ -78,7 +78,7 @@ void Server::sendWelcome(Client& cl) {
 }
 
 const std::string& Server::serverName() const { return _servername; }
-// ========== dispatcher for IRC clientcommands ==========
+// ========== dispatcher for IRC client commands ==========
 void Server::initCommands() {
     registerAllCommands(_cmds, *this);
 }
@@ -90,13 +90,13 @@ void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
 
     if (!cl.registered()) {
         if (!cl.hasPass() && (cmd == "NICK" || cmd == "USER")) { 
-            //if the client has not passed the password, and the command is NICK or USER, send 464
+            // If client hasn't passed password, and command is NICK or USER, send 464
             cl.sendLine(ERR_PASSWDMISMATCH(_servername));
             enableWriteForFd(cl.fd());
             return;
         }
         if (cmd != "PASS" && cmd != "NICK" && cmd != "USER" && cmd != "PING" && cmd != "CAP" && cmd != "QUIT") {
-            //if the command is not PASS, NICK, USER, PING, CAP, or QUIT, send 451
+            // If command is not PASS, NICK, USER, PING, CAP, or QUIT, send 451
             cl.sendLine(ERR_NOTREGISTERED(_servername));
             enableWriteForFd(cl.fd());
             std::cout << "[DEBUG] Command '" << cmd << "' rejected (not registered), sent 451" << std::endl;
@@ -106,7 +106,7 @@ void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
 
     if (!_cmds.dispatch(cmd, *this, cl, m)) {
         std::cout << "[DEBUG] Unknown command: '" << cmd << "'" << std::endl;
-        // 未知指令：發送 421 錯誤
+        // Unknown command: send 421 error
         cl.sendLine(ERR_UNKNOWNCOMMAND(_servername, cmd));
         enableWriteForFd(cl.fd());
     }
@@ -126,27 +126,27 @@ void Server::run() {
             throw std::runtime_error("poll: " + std::string(std::strerror(errno)));
         }
 
-        // 1) 只處理 poll 這一輪「原本就存在」的條目，避免 push_back 期間重配
+        // 1) Only process entries that existed at start of this poll round, avoid reallocation during push_back
         const size_t originalCount = _pfds.size();
 
-        // 暫存：本輪新增的 client 與要關閉的 index
+        // Temporary storage: new clients to add and indices to close
         std::vector<int> toAddFds;
         std::vector<size_t> toCloseIdx;
 
-        // 處理所有 poll 事件
+        // Process all poll events
         for (size_t i = 0; i < originalCount; ++i) {
             if (_pfds[i].revents) {
                 processPollEvent(i, toAddFds, toCloseIdx);
             }
         }
 
-        // 2) 關閉/移除（倒序處理 index，避免位移）
+        // 2) Close/remove (reverse order to avoid index shifting)
         for (size_t k = 0; k < toCloseIdx.size(); ++k) {
             size_t idx = toCloseIdx[toCloseIdx.size() - 1 - k];
             closeClient(idx);
         }
 
-        // 3) 追加新連線
+        // 3) Add new connections
         for (size_t j = 0; j < toAddFds.size(); ++j) {
             addNewClient(toAddFds[j]);
         }
@@ -159,13 +159,13 @@ static std::map<std::string, Channel>::iterator
 ensureChannel(std::map<std::string, Channel>& chans, const std::string& ch) {
     std::map<std::string, Channel>::iterator it = chans.find(ch);
     if (it == chans.end()) {
-        // Channel 只有帶名建構子，所以用 insert 建
+        // Channel only has named constructor, so use insert to create
         it = chans.insert(std::make_pair(ch, Channel(ch))).first;
     }
     return it;
 }
 
-// --- 1) 廣播到頻道 ---
+// --- 1) Broadcast to channel ---
 void Server::broadcastToChannel(const std::string& ch,
                                 const std::string& line,
                                 int except_fd)
@@ -190,14 +190,14 @@ void Server::broadcastToChannel(const std::string& ch,
 bool Server::addClientToChannel(const std::string& ch, int fd)
 {
     const std::string key = normalizeChannelName(ch);
-    // 取得/建立頻道（使用規範化名稱作為鍵）
+    // Get/create channel (using normalized name as key)
     std::map<std::string, Channel>::iterator it = ensureChannel(_channels, key);
     Channel& C = it->second;
 
-    // 寫入 Channel
+    // Add to Channel
     bool inserted = C.addClient(fd);
 
-    // 同步 Client 的 channel 清單
+    // Sync Client's channel list
     if (inserted) {
         std::map<int, Client*>::iterator cit = _clients.find(fd);
         if (cit != _clients.end() && cit->second) {
@@ -217,16 +217,16 @@ bool Server::removeClientFromChannel(const std::string& ch, int fd)
     Channel& C = it->second;
     if (!C.hasClient(fd)) return false;
 
-    // 從 Channel 移除
+    // Remove from Channel
     C.removeClient(fd);
 
-    // 從 Client 的 channel 清單移除
+    // Remove from Client's channel list
     std::map<int, Client*>::iterator cit = _clients.find(fd);
     if (cit != _clients.end() && cit->second) {
         cit->second->removeChannel(key);
     }
 
-    // 若頻道空了，立即刪除（符合 IRC：空頻道即銷毀，模式/主題/邀請等重置）
+    // If channel is empty, delete immediately (IRC spec: empty channel destroyed, modes/topic/invites reset)
     if (C.members().empty()) {
         std::cout << "[DEBUG] Channel " << key << " became empty, removing" << std::endl;
         _channels.erase(it);
@@ -281,7 +281,7 @@ Channel& Server::getChannel(const std::string& ch) {
     const std::string key = normalizeChannelName(ch);
     std::map<std::string, Channel>::iterator it = _channels.find(key);
     if (it == _channels.end()) {
-        // 頻道不存在，建立新的
+        // Channel doesn't exist, create new one
         std::cout << "[DEBUG] Creating new channel: " << key << std::endl;
         std::pair<std::map<std::string, Channel>::iterator, bool> result =
             _channels.insert(std::make_pair(key, Channel(key)));
@@ -302,12 +302,12 @@ bool Server::isChannelOperator(const std::string& ch, int fd) const {
 }
 
 
-// ========== run() 輔助函數 ==========
+// ========== run() helper functions ==========
 
 void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vector<size_t>& toCloseIdx) {
-    struct pollfd cur = _pfds[idx]; // 拷貝成局部，不拿參考，避免失效
+    struct pollfd cur = _pfds[idx]; // Copy to local, don't use reference to avoid invalidation
 
-    // A) Listener 可讀 → 先把新連線記到暫存陣列，迴圈結束後再 push_back
+    // A) Listener readable → store new connections in temp array, push_back after loop ends
     if ((cur.revents & POLLIN) && cur.fd == _listener.getFd()) {
         std::vector<std::pair<int, std::string> > news = acceptClients(_listener.getFd());
         for (size_t j = 0; j < news.size(); ++j) {
@@ -325,7 +325,7 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
             }
         }
     }
-    // B) Client 可讀
+    // B) Client readable
     else if (cur.revents & POLLIN) {
         if (_dccByFd.find(cur.fd) != _dccByFd.end()) {
             processDccPollEvent(idx, toCloseIdx);
@@ -339,7 +339,7 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
         }
         Client *cl = it->second;
 
-        if (!cl->readFromSocket()) { // 對端關閉或讀錯
+        if (!cl->readFromSocket()) { // Peer closed or read error
             std::cout << "[DEBUG] Marking client idx=" << idx << " fd=" << fd << " for close" << std::endl;
             toCloseIdx.push_back(idx);
             return;
@@ -359,7 +359,7 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
             }
         }
     }
-    // C) Client 可寫
+    // C) Client writable
     else if (cur.revents & POLLOUT) {
         if (_dccByFd.find(cur.fd) != _dccByFd.end()) {
             processDccPollEvent(idx, toCloseIdx);
@@ -383,11 +383,11 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
             return;
         }
         if (cl->isOutbufEmpty()) {
-            _pfds[idx].events &= ~POLLOUT; // 送完就關掉避免 busy loop
+            _pfds[idx].events &= ~POLLOUT; // Turn off after sending to avoid busy loop
         }
     }
 
-    // D) 錯誤/關閉
+    // D) Error/Close
     if (cur.revents & (POLLERR | POLLHUP | POLLNVAL)) {
         if (_dccByFd.find(cur.fd) != _dccByFd.end()) {
             processDccPollEvent(idx, toCloseIdx);
@@ -406,7 +406,7 @@ void Server::closeClient(size_t idx) {
     int fd = _pfds[idx].fd;
     std::cout << "[DEBUG] Closing client fd=" << fd << std::endl;
 
-    // DCC socket 關閉處理
+    // DCC socket close handling
     std::map<int, DccSession>::iterator ds = _dccByFd.find(fd);
     if (ds != _dccByFd.end()) {
         DccSession& sess = ds->second;

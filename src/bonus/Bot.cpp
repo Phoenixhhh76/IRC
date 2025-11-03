@@ -12,7 +12,7 @@ void Server::initBot() {
 }
 
 void Server::handleBotMessage(const std::string& senderNick, const std::string& target, const std::string& message) {
-    // 被動關鍵字回覆（大小寫不敏感）：42 / irc
+    // Passive keyword reply (case-insensitive): 42 / irc
     std::string lower = message;
     for (size_t i = 0; i < lower.size(); ++i) lower[i] = std::tolower(lower[i]);
     if (lower.find("42") != std::string::npos) {

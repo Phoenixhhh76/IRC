@@ -67,12 +67,12 @@ void Listener::setFd(int fd) {
     if (fd < 0)
         throw std::runtime_error("socket(): " + std::string(std::strerror(errno)));
 
-    // 使用暫存 fd 先完成所有設定，成功後再寫入 _fd
+    // Use temp fd to complete all settings first, write to _fd after success
     if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-        ::close(fd);  // 設定失敗就關掉 socket
+        ::close(fd);  // Close socket if setting fails
         throw std::runtime_error("fcntl(F_SETFL, O_NONBLOCK): " + std::string(std::strerror(errno)));
     }
 
-    _fd = fd; // 最後一步才賦值，避免拋例外時留住已賦值的 fd
+    _fd = fd; // Assign only as last step, avoid holding assigned fd when throwing exception
 }
 

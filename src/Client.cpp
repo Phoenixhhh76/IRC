@@ -13,7 +13,7 @@ Client::Client(int fd)
 {}
 
 Client::~Client() {
-    // 讓解構子安全地收尾；若已經 closeNow() 過，_fd 會是 -1，這裡不會再次關閉
+    // Safe cleanup in destructor; if closeNow() was already called, _fd will be -1, won't close again
     closeNow();
 }
 
@@ -23,7 +23,7 @@ Client::~Client() {
 void Client::closeNow() {
     if (_fd >= 0) {
         ::close(_fd);
-        _fd = -1; // 避免二次關閉
+        _fd = -1; // Avoid double close
     }
 }
 int Client::fd() const { return _fd; }
@@ -35,40 +35,40 @@ bool Client::readFromSocket() {
         if (n > 0) {
             std::cout << "[DEBUG] Client fd=" << _fd << " recv " << n << " bytes" << std::endl;
             _inbuf.append(buf, buf + n);
-            // 繼續讀，直到 EAGAIN（edge/level 觸發都安全）
+            // Continue reading until EAGAIN (safe for edge/level triggered)
             continue;
         }
         if (n == 0) {
-            // 對端關閉
+            // Peer closed
             std::cout << "[DEBUG] Client fd=" << _fd << " (" << _nick << ") recv EOF, closing" << std::endl;
             return false;
         }
         // n < 0
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            // 本輪讀完了
+            // This round of reading complete
             std::cout << "[DEBUG] Client fd=" << _fd << " recv EAGAIN/EWOULDBLOCK" << std::endl;
             return true;
         }
         if (errno == EINTR) {
-            // 被信號打斷，重試
+            // Interrupted by signal, retry
             std::cout << "[DEBUG] Client fd=" << _fd << " recv EINTR, retrying" << std::endl;
             continue;
         }
-        // 其他錯誤：建議回 false 交由上層清理（也可選擇丟例外）
+        // Other errors: return false for upper layer cleanup (or could throw exception)
         std::cout << "[DEBUG] Client fd=" << _fd << " recv error: " << std::strerror(errno) << std::endl;
         return false;
     }
 }
 
 bool Client::popLine(std::string& out) {
-    // IRC 正式以 "\r\n" 結尾；容忍只有 '\n' 的工具（例如某些測試）
+    // IRC officially ends with "\r\n"; tolerate tools with only '\n' (e.g. some tests)
     std::string::size_type pos = _inbuf.find("\r\n");
     if (pos != std::string::npos) {
         out.assign(_inbuf, 0, pos);
         _inbuf.erase(0, pos + 2);
         return true;
     }
-    // 寬鬆：僅 '\n'
+    // Lenient: only '\n'
     std::string::size_type lf = _inbuf.find('\n');
     if (lf != std::string::npos) {
         out.assign(_inbuf, 0, lf);
@@ -85,22 +85,22 @@ void Client::flushOutbuf() {
         ssize_t n = ::send(_fd, _outbuf.data(), _outbuf.size(), 0);
         if (n > 0) {
             _outbuf.erase(0, static_cast<std::string::size_type>(n));
-            // 繼續嘗試送更多；直到送不動
+            // Continue trying to send more; until can't send
             continue;
         }
         if (n < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // 目前不可寫：由 poll 啟用 POLLOUT，再等下一輪
+                // Currently can't write: enable POLLOUT via poll, wait for next round
                 return;
             }
             if (errno == EINTR) {
-                // 被信號打斷，重試
+                // Interrupted by signal, retry
                 continue;
             }
-            // 其他錯誤：交由外層處理（也可改成 return false）
+            // Other errors: let outer layer handle (could also change to return false)
             throw std::runtime_error("send: " + std::string(std::strerror(errno)));
         }
-        // n == 0 幾乎不會發生（對 TCP send 而言），保險起見 break
+        // n == 0 almost never happens (for TCP send), break just in case
         break;
     }
 }
@@ -159,9 +159,9 @@ bool Client::hasUser() const { return _hasUser; }
 bool Client::hasPass() const { return _hasPass; }
 bool Client::registered() const { return _registered; }
 
-// Just check if NIck and User is done
+// Just check if Nick and User is done
 bool Client::tryFinishRegister() {
-    // 确保已经设置了密码，并且是在NICK和USER之前设置的
+    // Ensure password is set before NICK and USER
     if (!_registered && _hasPass && _hasNick && _hasUser) {
         _registered = true;
         return true;

@@ -20,10 +20,10 @@ private:
     bool        _topicRestricted;
     std::time_t _createdAt; // channel creation time (epoch seconds)
 
-    std::set<int> _clients; //直接存fd
+    std::set<int> _clients; // store fd directly
     std::set<int> _operators;
     //std::set<int> _invitedClients;
-    std::set<std::string>   _invitedNicks; //改成存nick (try to fix kick/invite issue)
+    std::set<std::string>   _invitedNicks; // changed to store nick (try to fix kick/invite issue)
 public:
     explicit Channel(const std::string& name);
 
@@ -55,7 +55,7 @@ public:
     void clearInviteNick(const std::string& nick);
 
     //void broadcastMessage(const std::string& message, Client* sender) const;
-    const std::set<int>& members() const;//這邊改成列舉成員，讓Server負責broadcastMessage
+    const std::set<int>& members() const;// changed to enumerate members, let Server handle broadcastMessage
 
 };
 

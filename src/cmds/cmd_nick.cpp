@@ -12,40 +12,40 @@ void CmdNick::execute(Server& srv, Client& cl, const IrcMessage& m) {
         srv.enableWriteForFd(cl.fd());
         return;
     }
-    // 多於一個參數（例如 "NICK a b"）→ 432
+    // More than one parameter (e.g. "NICK a b") → 432
     if (m.params.size() > 1) {
         cl.sendLine(ERR_ERRONEUSNICKNAME(srv.serverName(), m.params[0]));
         srv.enableWriteForFd(cl.fd());
         return;
     }
     const std::string& nick = m.params[0];
-    // 合法性檢查 → 432
+    // Validity check → 432
     if (!isValidNick(nick)) {
         cl.sendLine(ERR_ERRONEUSNICKNAME(srv.serverName(), nick));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 已註冊者改名：允許，但要檢查重複；未註冊也要檢查重複
+    // Registered users renaming: allowed, but check duplicates; unregistered also check duplicates
     if (srv.isNickInUse(nick) && (!cl.hasNick() || nick != cl.getNick())) {
         cl.sendLine(ERR_NICKNAMEINUSE(srv.serverName(), nick));
         srv.enableWriteForFd(cl.fd());
         return;
     }
-    // 保存旧的前缀用于广播
+    // Save old prefix for broadcasting
     std::string oldPrefix = cl.getFullPrefix();
 
-    // 更新昵称
+    // Update nickname
     srv.takeNick(cl, nick);
 
-    // 广播昵称变更到所有相关频道
+    // Broadcast nickname change to all related channels
     const std::set<std::string>& channels = cl.channels();
     for (std::set<std::string>::const_iterator it = channels.begin();
          it != channels.end(); ++it) {
         srv.broadcastToChannel(*it, oldPrefix + " NICK :" + nick, -1);
     }
 
-    // 如果这是注册过程的一部分，发送欢迎消息
+    // If this is part of registration process, send welcome message
     if (cl.tryFinishRegister())
         srv.sendWelcome(cl);
 }

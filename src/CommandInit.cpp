@@ -1,6 +1,6 @@
 #include "CommandInit.hpp"
 
-// 集中 include 所有指令不然都放在Server.cpp裡面很恐怖
+// Centralize includes for all commands instead of putting them all in Server.cpp
 #include "cmds/cmd_nick.hpp"
 #include "cmds/cmd_user.hpp"
 #include "cmds/cmd_ping.hpp"
@@ -21,7 +21,7 @@
 
 
 void registerAllCommands(CommandRegistry& registry, Server& srv) {
-    (void)srv; // 如果暫時沒用到可以忽略警告
+    (void)srv; // Ignore warning if temporarily not used
 
     registry.registerCmd("NICK", new CmdNick());
     registry.registerCmd("PASS", new CmdPass());

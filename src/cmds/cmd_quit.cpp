@@ -7,18 +7,18 @@
 void CmdQuit::execute(Server& srv, Client& cl, const IrcMessage& m) {
     std::string reason = m.params.empty() ? "Quit" : m.params[0];
 
-    // 廣播 QUIT 訊息給所有相關頻道的成員
+    // Broadcast QUIT message to all related channel members
     const std::set<std::string>& channels = cl.channels();
-    std::set<std::string> channelsCopy = channels; // 創建副本，因為 removeClientFromChannel 會修改
+    std::set<std::string> channelsCopy = channels; // Create copy because removeClientFromChannel will modify
     for (std::set<std::string>::const_iterator it = channelsCopy.begin();
          it != channelsCopy.end(); ++it) {
-        // 通知頻道其他成員這個用戶離開了
+        // Notify other channel members that this user is leaving
         srv.broadcastToChannel(*it, cl.getFullPrefix() + " QUIT :" + reason, -1);
 
-        // 從頻道移除客戶端
+        // Remove client from channel
         srv.removeClientFromChannel(*it, cl.fd());
     }
 
-    // 關閉連線（由 Server::run() 處理，這裡只是標記需要關閉）
+    // Close connection (handled by Server::run(), just mark as needing close here)
     cl.closeNow();
 }

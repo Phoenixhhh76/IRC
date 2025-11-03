@@ -4,10 +4,10 @@
 #include <cstdlib>   // atoi
 
 int main(int argc, char** argv) {
-    // 安裝訊號處理，支援優雅關機（SIGINT/SIGTERM）並忽略 SIGPIPE
+    // Install signal handlers for graceful shutdown (SIGINT/SIGTERM) and ignore SIGPIPE
     installSignalHandlers();
 
-    // 根據規格：./ircserv <port> <password>
+    // According to specification: ./ircserv <port> <password>
     if (argc != 3) {
         std::cerr << "Usage: " << argv[0] << " <port> <password>" << std::endl;
         return 1;

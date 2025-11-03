@@ -12,7 +12,7 @@
 
 static void set_nonblock_fd(int fd) {
     if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-        ::close(fd);  // 設定失敗就關掉 socket
+        ::close(fd);  // Close socket if setting fails
         throw std::runtime_error("fcntl(F_SETFL, O_NONBLOCK): " + std::string(std::strerror(errno)));
     }
 }
@@ -32,7 +32,7 @@ std::vector<std::pair<int, std::string> > acceptClients(int listen_fd) {
         try {
             set_nonblock_fd(cs);  // Will close socket on failure
 
-            // 获取主机名，首选使用数字形式的IP地址
+            // Get hostname, prefer numeric IP address format
             char hostbuf[NI_MAXHOST];
             int rc = getnameinfo((struct sockaddr*)&client_addr, addr_len,
                                 hostbuf, sizeof(hostbuf),
@@ -42,7 +42,7 @@ std::vector<std::pair<int, std::string> > acceptClients(int listen_fd) {
             if (rc == 0) {
                 host = hostbuf;
             } else {
-                // 回退到手动IP转换
+                // Fallback to manual IP conversion
                 char ipstr[INET_ADDRSTRLEN];
                 if (inet_ntop(AF_INET, &(client_addr.sin_addr), ipstr, sizeof(ipstr))) {
                     host = ipstr;

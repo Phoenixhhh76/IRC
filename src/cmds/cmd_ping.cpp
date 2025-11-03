@@ -6,7 +6,7 @@
 // Server sends PING to check if client is still connected. Client responds with PONG.
 void CmdPing::execute(Server& srv, Client& cl, const IrcMessage& m) {
     if (!m.params.empty()) {
-        cl.sendLine(RPL_PING(srv.serverName(), m.params.back())); // 組出 PONG
+        cl.sendLine(RPL_PING(srv.serverName(), m.params.back())); // Compose PONG
         srv.enableWriteForFd(cl.fd());
     }
 }

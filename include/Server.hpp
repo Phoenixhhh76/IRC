@@ -25,12 +25,12 @@ private:
     std::map<int, Client*> _clients; // fd → pointer to Client
     std::map<std::string, int>  _nick2fd;    // nick -> fd
     std::string                 _servername;
-    std::string                 _password;    // 伺服器密碼
+    std::string                 _password;    // Server password
     std::map<std::string, Channel> _channels;
     CommandRegistry _cmds;
-    std::set<std::string> _operators; // operator 暱稱集合
-    std::string _botNick; // Bot 的暱稱
-    int _botFd; // Bot 的檔案描述符（虛擬）
+    std::set<std::string> _operators; // operator nickname set
+    std::string _botNick; // Bot's nickname
+    int _botFd; // Bot's file descriptor (virtual)
 
     std::map<int, DccSession> _dccByFd; // dccSockFd -> session
 
@@ -51,10 +51,10 @@ public:
 
     void broadcastToChannel(const std::string& ch, const std::string& line, int except_fd);
     // add for IRC message
-    void enableWriteForFd(int fd);               // 找到對應 pollfd，開啟 POLLOUT
+    void enableWriteForFd(int fd);               // Find corresponding pollfd, enable POLLOUT
     bool isNickInUse(const std::string& nick) const;
-    void takeNick(Client& cl, const std::string& newNick); // 更新 client 與 _nick2fd
-    void sendWelcome(Client& cl);                // 發 001
+    void takeNick(Client& cl, const std::string& newNick); // Update client and _nick2fd
+    void sendWelcome(Client& cl);                // Send 001
 
     bool addClientToChannel(const std::string& ch, int fd);
     bool removeClientFromChannel(const std::string& ch, int fd);
@@ -63,32 +63,32 @@ public:
 
     void sendToNick(const std::string& nick, const std::string& line);
 
-    // --- 密碼與操作員相關 ---
+    // --- Password and operator related ---
     bool checkPassword(const std::string& pwd) const;
     bool isOperator(const std::string& nick) const;
     void addOperator(const std::string& nick);
 
-    // --- 便利 getter（供指令使用）---
+    // --- Convenience getters (for commands) ---
     int getFdByNick(const std::string& nick) const;
     Channel& getChannel(const std::string& ch);
     
     Client*       getClientByFd(int fd);
     const Client* getClientByFd(int fd) const;
 
-    // --- 供指令檢查 channel operator ---
+    // --- For commands to check channel operator ---
     bool isChannelOperator(const std::string& ch, int fd) const;
 
-    // --- Bot 功能 ---
+    // --- Bot features ---
     void initBot();
     void handleBotMessage(const std::string& senderNick, const std::string& target, const std::string& message);
     void botSendMessage(const std::string& target, const std::string& message);
     void botSendNotice(const std::string& nick, const std::string& message);
 
-    // --- DCC 功能 ---
+    // --- DCC features ---
     void handleDccSend(int fd, const IrcMessage& m);
     void processDccPollEvent(size_t idx, std::vector<size_t>& toCloseIdx);
 
-    // --- run() 輔助函數 ---
+    // --- run() helper functions ---
     void processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vector<size_t>& toCloseIdx);
     void closeClient(size_t idx);
     void addNewClient(int fd);

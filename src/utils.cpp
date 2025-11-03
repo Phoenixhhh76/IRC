@@ -2,31 +2,31 @@
 #include <algorithm>
 #include <cctype>
 
-// 实现：将字符串转换为小写
+// Implementation: convert string to lowercase
 std::string toLower(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
 }
 
-// RFC 2812规范的昵称验证
+// RFC 2812 nickname validation
 bool isValidNick(const std::string& nick) {
-    // 1. 检查长度
+    // 1. Check length
     if (nick.empty() || nick.length() > 9)
         return false;
 
-    // 2. 检查首字符
+    // 2. Check first character
     if (isdigit(nick[0]) || nick[0] == '-')
         return false;
 
-    // 3. 检查所有字符
+    // 3. Check all characters
     for (size_t i = 0; i < nick.length(); ++i) {
         char c = nick[i];
-        // 不允许空格和其他空白字符
+        // No spaces or other whitespace
         if (isspace(c))
             return false;
-        // 只允许字母、数字和特定的特殊字符
-        if (!(isalnum(c) ||  // 字母或数字
+        // Only allow letters, digits and specific special characters
+        if (!(isalnum(c) ||  // Letter or digit
               c == '-' || c == '[' || c == ']' || c == '\\' ||
               c == '`' || c == '^' || c == '{' || c == '|' || c == '}'))
             return false;
@@ -36,17 +36,17 @@ bool isValidNick(const std::string& nick) {
 }
 
 bool isValidChannelName(const std::string& ch) {
-    if (ch.size() < 2 || ch.size() > 50) return false;   // 長度
-    if (ch[0] != '#') return false;                      // 前綴
+    if (ch.size() < 2 || ch.size() > 50) return false;   // Length
+    if (ch[0] != '#') return false;                      // Prefix
     for (size_t i = 1; i < ch.size(); ++i) {
         unsigned char c = static_cast<unsigned char>(ch[i]);
         if (c == ',' || c == '\a' || isCtl(c) || c == ' ') return false;
-        // 其餘字元接受（你也可收窄白名單）
+        // Accept other characters (you can narrow the whitelist if needed)
     }
     return true;
 }
 
-// 构建完整的用户前缀 (:nick!user@host)
+// Build complete user prefix (:nick!user@host)
 std::string buildPrefix(const std::string& nick, const std::string& user, const std::string& host) {
     std::string prefix = ":" + (!nick.empty() ? nick : "*");
     prefix += "!" + (!user.empty() ? user : "unknown");

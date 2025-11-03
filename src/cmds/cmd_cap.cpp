@@ -9,11 +9,11 @@ void CmdCap::execute(Server& srv, Client& cl, const IrcMessage& m) {
     (void)cl;
     (void)m;
     
-    // CAP 協商：irssi 會發送 CAP LS
-    // 我們簡單地忽略它（不需要響應）
-    // 註冊後的命令會正常處理
+    // CAP negotiation: irssi will send CAP LS
+    // We simply ignore it (no response needed)
+    // Commands after registration will be processed normally
     
-    // 如果需要響應：
+    // If response needed:
     // if (m.params.size() > 0 && m.params[0] == "LS") {
     //     cl.sendLine("CAP * LS :");
     //     srv.enableWriteForFd(cl.fd());

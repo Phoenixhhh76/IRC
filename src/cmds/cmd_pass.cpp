@@ -5,14 +5,14 @@
 // Execute | Format: PASS <password>
 // Sets the connection password. Must be called before NICK/USER registration.
 void CmdPass::execute(Server& srv, Client& cl, const IrcMessage& m) {
-    // 检查是否已经使用了NICK或USER命令
+    // Check if NICK or USER command has already been used
     if (cl.hasNick() || cl.hasUser()) {
         cl.sendLine(ERR_ALREADYREGISTRED(srv.serverName()));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 检查是否已经注册
+    // Check if already registered
     if (cl.registered()) {
         cl.sendLine(ERR_ALREADYREGISTRED(srv.serverName()));
         srv.enableWriteForFd(cl.fd());
@@ -24,7 +24,7 @@ void CmdPass::execute(Server& srv, Client& cl, const IrcMessage& m) {
         return;
     }
 
-    // ✅ 檢查密碼是否符合伺服器設定
+    // Check if password matches server setting
     if (!srv.checkPassword(m.params[0])) {
         cl.sendLine(ERR_PASSWDMISMATCH(srv.serverName()));
         srv.enableWriteForFd(cl.fd());

@@ -17,15 +17,15 @@ DccSession::DccSession(const DccSession& other)
     : sockFd(other.sockFd), ownerFd(other.ownerFd),
       filename(other.filename), savePath(other.savePath),
       connecting(other.connecting), finished(other.finished) {
-    // 转移ofstream指针的所有权，而不是复制
+    // Transfer ofstream pointer ownership, not copy
     ofs = other.ofs;
-    // 将原对象的指针设为NULL，防止双重删除
+    // Set original object's pointer to NULL to prevent double deletion
     const_cast<DccSession&>(other).ofs = NULL;
 }
 
 DccSession& DccSession::operator=(const DccSession& other) {
     if (this != &other) {
-        // 清理当前资源
+        // Clean up current resources
         if (ofs) {
             if (ofs->is_open()) ofs->close();
             delete ofs;
@@ -38,7 +38,7 @@ DccSession& DccSession::operator=(const DccSession& other) {
         connecting = other.connecting;
         finished = other.finished;
 
-        // 转移ofstream指针的所有权
+        // Transfer ofstream pointer ownership
         ofs = other.ofs;
         const_cast<DccSession&>(other).ofs = NULL;
     }
@@ -51,7 +51,7 @@ DccSession::~DccSession() {
         delete ofs;
         ofs = NULL;
     }
-    // 注意：不在这里关闭sockFd，因为它由Server统一管理
+    // Note: don't close sockFd here, it's managed uniformly by Server
 }
 
 void Server::handleDccSend(int fd, const IrcMessage& m) {
@@ -105,7 +105,7 @@ void Server::handleDccSend(int fd, const IrcMessage& m) {
     std::ostringstream path;
     path << "/tmp/ftirc_" << std::time(NULL) << "_" << filename;
 
-    // 创建一个临时对象
+    // Create a temporary object
     DccSession sess;
     sess.sockFd = s;
     sess.ownerFd = fd;
@@ -124,11 +124,11 @@ void Server::handleDccSend(int fd, const IrcMessage& m) {
         return;
     }
 
-    // 使用insert来避免拷贝问题 - 但这在C++98中仍然有问题
-    // 我们需要恢复公有的拷贝构造函数，但要确保资源管理正确
+    // Use insert to avoid copy issues - but this still has problems in C++98
+    // We need to restore public copy constructor, but ensure correct resource management
     _dccByFd[s] = sess;
 
-    // 防止析构函数删除资源，因为现在map拥有它们
+    // Prevent destructor from deleting resources, as map now owns them
     sess.ofs = NULL;
 
     struct pollfd np;

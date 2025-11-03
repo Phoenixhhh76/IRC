@@ -21,17 +21,17 @@ void CmdPrivmsg::execute(Server& srv, Client& cl, const IrcMessage& m) {
         return;
     }
 
-    // 檢查是否是發給 Bot 的訊息（不檢查 Bot 是否存在，因為它是內建的）
+    // Check if message is for Bot (don't check if Bot exists, it's built-in)
     if (target == "ft_irc_Bot") {
         srv.handleBotMessage(cl.getNick(), cl.getNick(), text);
-        // 不需要檢查用戶是否存在，直接返回
+        // No need to check if user exists, return directly
         cl.sendLine(RPL_NOTICE(srv.serverName(), cl.getNick(), "Bot message sent"));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 先提供可編譯的回饋
-    cl.sendLine(RPL_NOTICE(srv.serverName(), cl.getNick(), "PRIVMSG queued")); // 暫時回一條提示
+    // Provide compilable feedback first
+    cl.sendLine(RPL_NOTICE(srv.serverName(), cl.getNick(), "PRIVMSG queued")); // Temporary hint
     srv.enableWriteForFd(cl.fd());
 
     if (target.size() > 0 && target[0] != '#') {
@@ -51,13 +51,13 @@ void CmdPrivmsg::execute(Server& srv, Client& cl, const IrcMessage& m) {
     }
     srv.broadcastToChannel(target, cl.getFullPrefix() + " PRIVMSG " + target + " :" + text, cl.fd());
 
-    // 檢查頻道訊息中是否包含 Bot 命令或關鍵字觸發
+    // Check if channel message contains Bot commands or trigger keywords
     if (text == "!hello" || text == "!help" || text == "!time" || text == "!stats" || text == "!ping" || text == "!info"
         || (text.size() > 5 && text.substr(0,5) == "!ask ")
         || text.find("42") != std::string::npos) {
         srv.handleBotMessage(cl.getNick(), target, text);
     } else {
-        // 大小寫不敏感檢查 irc
+        // Case-insensitive check for "irc"
         std::string lower = text;
         for (size_t i = 0; i < lower.size(); ++i) lower[i] = std::tolower(lower[i]);
         if (lower.find("irc") != std::string::npos) {

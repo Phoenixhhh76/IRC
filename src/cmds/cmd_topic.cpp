@@ -19,24 +19,24 @@ void CmdTopic::execute(Server& srv, Client& cl, const IrcMessage& m) {
 
     const std::string& ch = m.params[0];
 
-    // 檢查頻道是否存在
+    // Check if channel exists
     if (!srv.channelExists(ch)) {
         cl.sendLine(ERR_NOSUCHCHANNEL(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 檢查用戶是否在頻道
+    // Check if user is in channel
     if (!srv.isChannelMember(ch, cl.fd())) {
     cl.sendLine(ERR_NOTONCHANNEL(srv.serverName(), cl.getNick(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 取得頻道（需要 Server 提供 getter）
+    // Get channel (need Server to provide getter)
     Channel& chan = srv.getChannel(ch);
 
-    // 如果沒有提供主題參數 → 查詢主題
+    // If no topic parameter provided → query topic
     if (m.params.size() == 1) {
         const std::string& topic = chan.getTopic();
         if (topic.empty()) {
@@ -48,20 +48,20 @@ void CmdTopic::execute(Server& srv, Client& cl, const IrcMessage& m) {
         return;
     }
 
-    // 提供主題 → 設定主題
+    // Topic provided → set topic
     const std::string& newTopic = m.params[1];
 
-    // 若頻道是 +t，檢查是否需要 operator 權限
+    // If channel is +t, check if operator permission needed
     if (chan.isTopicRestricted() && !srv.isChannelOperator(ch, cl.fd())) {
         cl.sendLine(ERR_CHANOPRIVSNEEDED(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 設定主題並廣播
+    // Set topic and broadcast
     chan.setTopic(newTopic);
 
-    // 廣播 TOPIC 變化給頻道成員
+    // Broadcast TOPIC change to channel members
     std::string topicMsg = cl.getFullPrefix() + " TOPIC " + ch + " :" + newTopic;
     srv.broadcastToChannel(ch, topicMsg, -1);
 }

@@ -22,7 +22,7 @@ void CmdMode::execute(Server& srv, Client& cl, const IrcMessage& m) {
 
     const std::string& target = m.params[0];
 
-    // 如果目標是頻道
+    // If target is channel
     if (target[0] == '#') {
         handleChannelMode(srv, cl, m);
     } else {
@@ -34,17 +34,17 @@ void CmdMode::execute(Server& srv, Client& cl, const IrcMessage& m) {
 void CmdMode::handleChannelMode(Server& srv, Client& cl, const IrcMessage& m) {
     const std::string& ch = m.params[0];
 
-    // 檢查頻道是否存在
+    // Check if channel exists
     if (!srv.channelExists(ch)) {
         cl.sendLine(ERR_NOSUCHCHANNEL(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 取得頻道
+    // Get channel
     Channel& chan = srv.getChannel(ch);
 
-    // 如果沒有提供 mode → 查詢目前 modes
+    // If no mode provided → query current modes
     if (m.params.size() == 1) {
         std::ostringstream oss;
         oss << "+";
@@ -53,9 +53,9 @@ void CmdMode::handleChannelMode(Server& srv, Client& cl, const IrcMessage& m) {
         if (!chan.key().empty()) oss << "k";
         if (chan.userLimit() > 0) oss << "l";
 
-        // 按規範以 324 numeric 回覆查詢：":server 324 <nick> <#chan> +modes [args]"
+        // Reply to query with 324 numeric per spec: ":server 324 <nick> <#chan> +modes [args]"
         cl.sendLine(RPL_CHANNELMODEIS(srv.serverName(), cl.getNick(), ch, oss.str(), std::string()));
-        // 同時發送 329 頻道創建時間，提升客戶端顯示完整度
+        // Also send 329 channel creation time, improve client display completeness
         {
             std::ostringstream ts;
             ts << chan.createdAt();
@@ -65,7 +65,7 @@ void CmdMode::handleChannelMode(Server& srv, Client& cl, const IrcMessage& m) {
         return;
     }
 
-    // irssi 常會發 MODE #chan b/e/I 來查詢列表（ban/except/invite-exempt）——本實作用空列表結束
+    // irssi often sends MODE #chan b/e/I to query lists (ban/except/invite-exempt) — this implementation ends with empty list
     if (m.params.size() >= 2 && m.params[1] == "b") {
         cl.sendLine(RPL_ENDOFBANLIST(srv.serverName(), cl.getNick(), ch));
         srv.enableWriteForFd(cl.fd());
@@ -88,25 +88,25 @@ void CmdMode::handleChannelMode(Server& srv, Client& cl, const IrcMessage& m) {
 void CmdMode::processChannelMode(Server& srv, Client& cl, const IrcMessage& m, Channel& chan) {
     const std::string& ch = m.params[0];
     const std::string& modes = m.params[1];
-    if (modes.empty()) return; // 無效，忽略
+    if (modes.empty()) return; // Invalid, ignore
     bool add = (modes[0] == '+');
     if (modes.size() < 2) {
-        // e.g. 單個字元如 "b" 的情況在上層已處理；其餘短字串不支援，忽略
+        // e.g. single char like "b" already handled in upper layer; other short strings not supported, ignore
         return;
     }
     char mode = modes[1];
 
-    // 檢查用戶是否為 channel operator（只允許 operator 設定 modes）
+    // Check if user is channel operator (only operator can set modes)
     if (!srv.isChannelOperator(ch, cl.fd())) {
         cl.sendLine(ERR_CHANOPRIVSNEEDED(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 應用模式變更
+    // Apply mode change
     applyMode(srv, cl, chan, mode, add, m);
 
-    // 廣播 MODE 變化，使用完整 user 前綴，避免缺 host
+    // Broadcast MODE change, use full user prefix to avoid missing host
     std::string args = (m.params.size() > 2 ? m.params[2] : "");
     srv.broadcastToChannel(ch, cl.getFullPrefix() + " MODE " + ch + " " + modes + (args.empty() ? "" : (" " + args)), -1);
 }
@@ -191,7 +191,7 @@ void CmdMode::applyMode(Server& srv, Client& cl, Channel& chan, char mode, bool 
             }
             break;
         default:
-            // 未知 mode，發送錯誤訊息
+            // Unknown mode, send error message
             {
                 std::string modeStr(1, mode);
                 cl.sendLine(ERR_UNKNOWNMODE(srv.serverName(), cl.getNick(), modeStr));

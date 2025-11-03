@@ -22,28 +22,28 @@ void CmdKick::execute(Server& srv, Client& cl, const IrcMessage& m) {
     const std::string& target = m.params[1];
     std::string reason = m.params.size() > 2 ? m.params[2] : cl.getNick();
 
-    // 檢查頻道是否存在
+    // Check if channel exists
     if (!srv.channelExists(ch)) {
         cl.sendLine(ERR_NOSUCHCHANNEL(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 檢查發起者是否在頻道
+    // Check if initiator is in channel
     if (!srv.isChannelMember(ch, cl.fd())) {
     cl.sendLine(ERR_NOTONCHANNEL(srv.serverName(), cl.getNick(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 檢查是否為 channel operator
+    // Check if channel operator
     if (!srv.isChannelOperator(ch, cl.fd())) {
         cl.sendLine(ERR_CHANOPRIVSNEEDED(srv.serverName(), ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 找目標用戶（需要 Server 提供 getter）
+    // Find target user (need Server to provide getter)
     int targetFd = srv.getFdByNick(target);
     if (targetFd == -1) {
         cl.sendLine(ERR_NOSUCHNICK(srv.serverName(), target));
@@ -51,14 +51,14 @@ void CmdKick::execute(Server& srv, Client& cl, const IrcMessage& m) {
         return;
     }
 
-    // 檢查目標是否在頻道
+    // Check if target is in channel
     if (!srv.isChannelMember(ch, targetFd)) {
         cl.sendLine(ERR_USERNOTINCHANNEL(srv.serverName(), target, ch));
         srv.enableWriteForFd(cl.fd());
         return;
     }
 
-    // 執行 KICK：從頻道移除並廣播（使用完整 user 前綴）
+    // Execute KICK: remove from channel and broadcast (use full user prefix)
     srv.broadcastToChannel(ch, cl.getFullPrefix() + " KICK " + ch + " " + target + " :" + reason, -1);
     srv.removeClientFromChannel(ch, targetFd);
 }
