@@ -33,6 +33,7 @@ bool Client::readFromSocket() {
     for (;;) {
         ssize_t n = ::recv(_fd, buf, sizeof(buf), 0);
         if (n > 0) {
+            std::cout << "[DEBUG] Client fd=" << _fd << " recv " << n << " bytes" << std::endl;
             _inbuf.append(buf, buf + n);
             // 繼續讀，直到 EAGAIN（edge/level 觸發都安全）
             continue;
@@ -45,13 +46,16 @@ bool Client::readFromSocket() {
         // n < 0
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // 本輪讀完了
+            std::cout << "[DEBUG] Client fd=" << _fd << " recv EAGAIN/EWOULDBLOCK" << std::endl;
             return true;
         }
         if (errno == EINTR) {
             // 被信號打斷，重試
+            std::cout << "[DEBUG] Client fd=" << _fd << " recv EINTR, retrying" << std::endl;
             continue;
         }
         // 其他錯誤：建議回 false 交由上層清理（也可選擇丟例外）
+        std::cout << "[DEBUG] Client fd=" << _fd << " recv error: " << std::strerror(errno) << std::endl;
         return false;
     }
 }

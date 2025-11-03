@@ -24,6 +24,8 @@ ircserv
 # Logs
 *.log
 
+docs/
+
 # Editor/IDE
 .vscode/
 .idea/

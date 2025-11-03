@@ -106,9 +106,9 @@ void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
 
     if (!_cmds.dispatch(cmd, *this, cl, m)) {
         std::cout << "[DEBUG] Unknown command: '" << cmd << "'" << std::endl;
-        // 未知指令（可選）
-        // cl.sendLine(ERR_UNKNOWNCOMMAND(_servername, cmd));
-        // enableWriteForFd(cl.fd());
+        // 未知指令：發送 421 錯誤
+        cl.sendLine(ERR_UNKNOWNCOMMAND(_servername, cmd));
+        enableWriteForFd(cl.fd());
     }
 }
 
