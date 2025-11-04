@@ -3,6 +3,7 @@
 #include "Parser.hpp"
 #include "Replies.hpp"
 #include "CommandInit.hpp"
+#include "utils.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
@@ -19,6 +20,12 @@
 
 Server::Server(int port, const std::string& password)
     : _listener(port), _servername("ft_irc"), _password(password), _botNick("ft_irc_Bot"), _botFd(-1) {
+    
+    // Validate password according to security rules
+    if (!isValidPassword(password)) {
+        throw std::invalid_argument("Invalid password: must be 3-50 characters, ASCII printable only, no whitespace");
+    }
+    
     struct pollfd p;
     p.fd = _listener.getFd();
     p.events = POLLIN;

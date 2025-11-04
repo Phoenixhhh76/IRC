@@ -54,6 +54,31 @@ std::string buildPrefix(const std::string& nick, const std::string& user, const 
     return prefix;
 }
 
+// Validate server password according to security rules
+bool isValidPassword(const std::string& password) {
+    // 1. Check length: minimum 3 characters, maximum 50 characters
+    if (password.length() < 3 || password.length() > 50) {
+        return false;
+    }
+    
+    // 2. Check each character
+    for (size_t i = 0; i < password.length(); ++i) {
+        unsigned char c = static_cast<unsigned char>(password[i]);
+        
+        // Must be ASCII printable (32-126), excluding whitespace
+        if (c < 33 || c > 126) {
+            return false;
+        }
+        
+        // No whitespace characters (space, tab, newline, etc.)
+        if (isspace(c)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 // ====== Graceful shutdown support ======
 volatile sig_atomic_t g_stopRequested = 0;
 

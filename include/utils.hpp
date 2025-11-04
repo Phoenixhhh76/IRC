@@ -18,6 +18,10 @@ bool isValidChannelName(const std::string& ch);
 // Build complete user prefix (:nick!user@host)
 std::string buildPrefix(const std::string& nick, const std::string& user, const std::string& host);
 
+// Validate server password according to security rules
+// Rules: 3-50 characters, ASCII printable only, no whitespace
+bool isValidPassword(const std::string& password);
+
 // Normalize channel name (RFC1459 casemapping)
 // - Lowercase A-Z -> a-z
 // - Map '{' to '[', '}' to ']', '|' to '\\'
