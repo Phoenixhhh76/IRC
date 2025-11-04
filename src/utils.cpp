@@ -60,22 +60,22 @@ bool isValidPassword(const std::string& password) {
     if (password.length() < 3 || password.length() > 50) {
         return false;
     }
-    
+
     // 2. Check each character
     for (size_t i = 0; i < password.length(); ++i) {
         unsigned char c = static_cast<unsigned char>(password[i]);
-        
+
         // Must be ASCII printable (32-126), excluding whitespace
         if (c < 33 || c > 126) {
             return false;
         }
-        
+
         // No whitespace characters (space, tab, newline, etc.)
         if (isspace(c)) {
             return false;
         }
     }
-    
+
     return true;
 }
 

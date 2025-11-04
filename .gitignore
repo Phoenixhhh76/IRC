@@ -23,8 +23,8 @@ ircserv
 
 # Logs
 *.log
-
-
+doc/
+*.txt
 
 # Editor/IDE
 .vscode/

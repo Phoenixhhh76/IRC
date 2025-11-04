@@ -116,9 +116,9 @@ void CmdMode::applyMode(Server& srv, Client& cl, Channel& chan, char mode, bool 
     const std::string& ch = m.params[0];
     switch (mode) {
         case 'i': // Invite-only
-            std::cout << "[DEBUG] Setting channel mode +i (invite-only): " << (add ? "ON" : "OFF") << std::endl;
+            //std::cout << "[IRC] Setting channel mode +i (invite-only): " << (add ? "ON" : "OFF") << std::endl;
             chan.setInviteOnly(add);
-            std::cout << "[DEBUG] Channel is now " << (chan.isInviteOnly() ? "invite-only" : "not invite-only") << std::endl;
+            //std::cout << "[DEBUG] Channel is now " << (chan.isInviteOnly() ? "invite-only" : "not invite-only") << std::endl;
             break;
         case 't': // Topic restricted
             chan.setTopicRestricted(add);

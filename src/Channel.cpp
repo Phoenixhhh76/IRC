@@ -37,10 +37,10 @@ void Channel::setTopic(const std::string& topic) {
 
 void Channel::setInviteOnly(bool inviteOnly) {
     _isInviteOnly = inviteOnly;
-    std::cout << "[DEBUG] Channel set to " << (inviteOnly ? "invite-only" : "public") << std::endl;
-    std::cout << "[DEBUG] Current invite list:" << std::endl;
+    //std::cout << " Channel set to " << (inviteOnly ? "invite-only" : "public") << std::endl;
+    //std::cout << "[IRC] Current invite list:" << std::endl;
     for (std::set<std::string>::const_iterator it = _invitedNicks.begin(); it != _invitedNicks.end(); ++it) {
-        std::cout << "  - " << *it << std::endl;
+        //std::cout << "  - " << *it << std::endl;
     }
 }
 
@@ -88,29 +88,25 @@ bool Channel::isOperator(int fd) const { return _operators.find(fd) != _operator
 
 void Channel::inviteNick(const std::string& nick) {
     std::string loweredNick = toLower(nick);
-    std::cout << "[DEBUG] Channel " << _name << "::inviteNick - Adding invite for: " << loweredNick << std::endl;
     _invitedNicks.insert(loweredNick);
-    std::cout << "[DEBUG] Channel " << _name << " current invited users:" << std::endl;
-    for (std::set<std::string>::const_iterator it = _invitedNicks.begin(); it != _invitedNicks.end(); ++it) {
-        std::cout << "  - " << *it << std::endl;
-    }
+    //for (std::set<std::string>::const_iterator it = _invitedNicks.begin(); it != _invitedNicks.end(); ++it) {
+       // std::cout << "  - " << *it << std::endl;}
 }
 
 bool Channel::isInvitedNick(const std::string& nick) const {
     std::string loweredNick = toLower(nick);
-    std::cout << "[DEBUG] Channel " << _name << "::isInvitedNick - Checking for: " << loweredNick << std::endl;
-    std::cout << "[DEBUG] Channel " << _name << " current invited users:" << std::endl;
-    for (std::set<std::string>::const_iterator it = _invitedNicks.begin(); it != _invitedNicks.end(); ++it) {
-        std::cout << "  - " << *it << std::endl;
-    }
+    //std::cout << "[IRC] Channel " << _name << "::isInvitedNick - Checking for: " << loweredNick << std::endl;
+    //std::cout << "[IRC] Channel " << _name << " current invited users:" << std::endl;
+    //for (std::set<std::string>::const_iterator it = _invitedNicks.begin(); it != _invitedNicks.end(); ++it) {
+        //std::cout << "  - " << *it << std::endl;}
     bool found = _invitedNicks.find(loweredNick) != _invitedNicks.end();
-    std::cout << "[DEBUG] Is invited to " << _name << ": " << (found ? "yes" : "no") << std::endl;
+    //std::cout << "[IRC] Is invited to " << _name << ": " << (found ? "yes" : "no") << std::endl;
     return found;
 }
 
 void Channel::clearInviteNick(const std::string& nick) {
     std::string loweredNick = toLower(nick);
-    std::cout << "[DEBUG] Channel::clearInviteNick - Removing invite for: " << loweredNick << std::endl;
+    //std::cout << "[IRC] Channel::clearInviteNick - Removing invite for: " << loweredNick << std::endl;
     _invitedNicks.erase(loweredNick);
 }
 

@@ -68,9 +68,9 @@ void CmdInvite::execute(Server& srv, Client& cl, const IrcMessage& m) {
     srv.enableWriteForFd(cl.fd());
 
     // Mark user as invited
-    std::cout << "[DEBUG] Inviting user: " << target << std::endl;
-    std::cout << "[DEBUG] Target nickname (lowercase): " << toLower(target) << std::endl;
+    //std::cout << "[IRC] Inviting user: " << target << std::endl;
+    //std::cout << "[IRC] Target nickname (lowercase): " << toLower(target) << std::endl;
     chan.inviteNick(target);  // Store by nick
-    std::cout << "[DEBUG] Invitation stored" << std::endl;
+    //std::cout << "[IRC] Invitation stored" << std::endl;
 
 }

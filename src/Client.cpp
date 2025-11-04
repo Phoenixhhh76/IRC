@@ -33,29 +33,29 @@ bool Client::readFromSocket() {
     for (;;) {
         ssize_t n = ::recv(_fd, buf, sizeof(buf), 0);
         if (n > 0) {
-            std::cout << "[DEBUG] Client fd=" << _fd << " recv " << n << " bytes" << std::endl;
+            //std::cout << "[IRC] Client fd=" << _fd << " recv " << n << " bytes" << std::endl;
             _inbuf.append(buf, buf + n);
             // Continue reading until EAGAIN (safe for edge/level triggered)
             continue;
         }
         if (n == 0) {
             // Peer closed
-            std::cout << "[DEBUG] Client fd=" << _fd << " (" << _nick << ") recv EOF, closing" << std::endl;
+            //std::cout << "[IRC] Client fd=" << _fd << " (" << _nick << ") recv EOF, closing" << std::endl;
             return false;
         }
         // n < 0
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             // This round of reading complete
-            std::cout << "[DEBUG] Client fd=" << _fd << " recv EAGAIN/EWOULDBLOCK" << std::endl;
+            //std::cout << "[IRC] Client fd=" << _fd << " recv EAGAIN/EWOULDBLOCK" << std::endl;
             return true;
         }
         if (errno == EINTR) {
             // Interrupted by signal, retry
-            std::cout << "[DEBUG] Client fd=" << _fd << " recv EINTR, retrying" << std::endl;
+            //std::cout << "[IRC] Client fd=" << _fd << " recv EINTR, retrying" << std::endl;
             continue;
         }
         // Other errors: return false for upper layer cleanup (or could throw exception)
-        std::cout << "[DEBUG] Client fd=" << _fd << " recv error: " << std::strerror(errno) << std::endl;
+        //std::cout << "[IRC] Client fd=" << _fd << " recv error: " << std::strerror(errno) << std::endl;
         return false;
     }
 }

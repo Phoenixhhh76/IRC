@@ -20,12 +20,12 @@
 
 Server::Server(int port, const std::string& password)
     : _listener(port), _servername("ft_irc"), _password(password), _botNick("ft_irc_Bot"), _botFd(-1) {
-    
+
     // Validate password according to security rules
     if (!isValidPassword(password)) {
         throw std::invalid_argument("Invalid password: must be 3-50 characters, ASCII printable only, no whitespace");
     }
-    
+
     struct pollfd p;
     p.fd = _listener.getFd();
     p.events = POLLIN;
@@ -93,10 +93,10 @@ void Server::initCommands() {
 void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
     const std::string& cmd = m.command;
 
-    std::cout << "[DEBUG] Server received command: '" << cmd << "' from fd=" << cl.fd() << std::endl;
+    std::cout << "[IRC] Server received command: '" << cmd << "' from fd=" << cl.fd() << std::endl;
 
     if (!cl.registered()) {
-        if (!cl.hasPass() && (cmd == "NICK" || cmd == "USER")) { 
+        if (!cl.hasPass() && (cmd == "NICK" || cmd == "USER")) {
             // If client hasn't passed password, and command is NICK or USER, send 464
             cl.sendLine(ERR_PASSWDMISMATCH(_servername));
             enableWriteForFd(cl.fd());
@@ -106,13 +106,13 @@ void Server::handleIrcMessage(Client& cl, const IrcMessage& m) {
             // If command is not PASS, NICK, USER, PING, CAP, or QUIT, send 451
             cl.sendLine(ERR_NOTREGISTERED(_servername));
             enableWriteForFd(cl.fd());
-            std::cout << "[DEBUG] Command '" << cmd << "' rejected (not registered), sent 451" << std::endl;
+            std::cout << "[IRC] Command '" << cmd << "' rejected (not registered), sent 451" << std::endl;
             return;
         }
     }
 
     if (!_cmds.dispatch(cmd, *this, cl, m)) {
-        std::cout << "[DEBUG] Unknown command: '" << cmd << "'" << std::endl;
+        std::cout << "[IRC] Unknown command: '" << cmd << "'" << std::endl;
         // Unknown command: send 421 error
         cl.sendLine(ERR_UNKNOWNCOMMAND(_servername, cmd));
         enableWriteForFd(cl.fd());
@@ -235,7 +235,7 @@ bool Server::removeClientFromChannel(const std::string& ch, int fd)
 
     // If channel is empty, delete immediately (IRC spec: empty channel destroyed, modes/topic/invites reset)
     if (C.members().empty()) {
-        std::cout << "[DEBUG] Channel " << key << " became empty, removing" << std::endl;
+        std::cout << "[IRC] Channel " << key << " became empty, removing" << std::endl;
         _channels.erase(it);
     }
     return true;
@@ -289,14 +289,14 @@ Channel& Server::getChannel(const std::string& ch) {
     std::map<std::string, Channel>::iterator it = _channels.find(key);
     if (it == _channels.end()) {
         // Channel doesn't exist, create new one
-        std::cout << "[DEBUG] Creating new channel: " << key << std::endl;
+        std::cout << "[IRC] Creating new channel: " << key << std::endl;
         std::pair<std::map<std::string, Channel>::iterator, bool> result =
             _channels.insert(std::make_pair(key, Channel(key)));
         it = result.first;
-        std::cout << "[DEBUG] Channel created with mode: " << (it->second.isInviteOnly() ? "invite-only" : "public") << std::endl;
+        std::cout << "[IRC] Channel created with mode: " << (it->second.isInviteOnly() ? "invite-only" : "public") << std::endl;
     } else {
-        std::cout << "[DEBUG] Found existing channel: " << key << std::endl;
-        std::cout << "[DEBUG] Channel mode: " << (it->second.isInviteOnly() ? "invite-only" : "public") << std::endl;
+        std::cout << "[IRC] Found existing channel: " << key << std::endl;
+        std::cout << "[IRC] Channel mode: " << (it->second.isInviteOnly() ? "invite-only" : "public") << std::endl;
     }
     return it->second;
 }
@@ -347,7 +347,7 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
         Client *cl = it->second;
 
         if (!cl->readFromSocket()) { // Peer closed or read error
-            std::cout << "[DEBUG] Marking client idx=" << idx << " fd=" << fd << " for close" << std::endl;
+            std::cout << "[IRC] Marking client idx=" << idx << " fd=" << fd << " for close" << std::endl;
             toCloseIdx.push_back(idx);
             return;
         }
@@ -405,13 +405,13 @@ void Server::processPollEvent(size_t idx, std::vector<int>& toAddFds, std::vecto
 }
 
 void Server::closeClient(size_t idx) {
-    std::cout << "[DEBUG] closeClient called for idx=" << idx << std::endl;
+    std::cout << "[IRC] closeClient called for idx=" << idx << std::endl;
     if (idx >= _pfds.size()) {
-        std::cout << "[DEBUG] WARNING: idx >= _pfds.size() (" << idx << " >= " << _pfds.size() << ")" << std::endl;
+        std::cout << "[IRC] WARNING: idx >= _pfds.size() (" << idx << " >= " << _pfds.size() << ")" << std::endl;
         return;
     }
     int fd = _pfds[idx].fd;
-    std::cout << "[DEBUG] Closing client fd=" << fd << std::endl;
+    std::cout << "[IRC] Closing client fd=" << fd << std::endl;
 
     // DCC socket close handling
     std::map<int, DccSession>::iterator ds = _dccByFd.find(fd);

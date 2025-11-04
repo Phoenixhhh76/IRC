@@ -5,10 +5,10 @@
 // Execute | Format: USER <username> <mode> <unused> :<realname>
 // Sets the client's username and realname during registration.
 void CmdUser::execute(Server& srv, Client& cl, const IrcMessage& m) {
-    std::cout << "[DEBUG] CmdUser::execute called from fd=" << cl.fd()
-              << ", params.size()=" << m.params.size() << std::endl;
+    //std::cout << "[IRC] CmdUser::execute called from fd=" << cl.fd()
+              //<< ", params.size()=" << m.params.size() << std::endl;
     for (size_t i = 0; i < m.params.size(); ++i) {
-        std::cout << "[DEBUG]   params[" << i << "]='" << m.params[i] << "'" << std::endl;
+        //std::cout << "[IRC]   params[" << i << "]='" << m.params[i] << "'" << std::endl;
     }
 
     if (cl.registered()) {

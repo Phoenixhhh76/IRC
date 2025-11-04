@@ -69,7 +69,7 @@ void CmdJoin::execute(Server& srv, Client& cl, const IrcMessage& m) {
         if (exists) {
             // Only get channel if it exists (avoid accidental creation)
             Channel& chan = srv.getChannel(ch);
-            std::cout << "[DEBUG] Found existing channel: " << ch << ", mode: " << (chan.isInviteOnly() ? "+i" : "public") << std::endl;
+            //std::cout << "[IRC] Found existing channel: " << ch << ", mode: " << (chan.isInviteOnly() ? "+i" : "public") << std::endl;
 
             // Already in channel → skip
             if (srv.isChannelMember(ch, cl.fd())) {

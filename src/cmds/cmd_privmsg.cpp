@@ -31,8 +31,8 @@ void CmdPrivmsg::execute(Server& srv, Client& cl, const IrcMessage& m) {
     }
 
     // Provide compilable feedback first
-    cl.sendLine(RPL_NOTICE(srv.serverName(), cl.getNick(), "PRIVMSG queued")); // Temporary hint
-    srv.enableWriteForFd(cl.fd());
+    //cl.sendLine(RPL_NOTICE(srv.serverName(), cl.getNick(), "PRIVMSG queued")); // Temporary hint
+    //srv.enableWriteForFd(cl.fd());
 
     if (target.size() > 0 && target[0] != '#') {
         if (!srv.isNickInUse(target)) {
