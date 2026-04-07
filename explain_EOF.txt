@@ -1,38 +1,56 @@
-你提到的作业要求用 nc 测“分段接收”的场景是有道理的，我来解释它的原理、为什么用 Ctrl+D，以及你该怎么测。
+\n---\nEnglish explanation\n---\nYou’re right that the assignment’s requirement to use `nc` to test the “segmented receive” scenario makes sense. I’ll explain the principle, why Ctrl+D is used, and how you should test.
 
-为什么要测“分段接收”
+## Why test “segmented receive”
 
-TCP 不保证“应用层一次 send = 对端一次 recv”。数据可能被拆成多次到达（低带宽、Nagle、MTU、内核缓冲等都会导致分段）。
-IRC 命令是以换行结尾（CRLF 或 LF）。服务器必须把多次 recv 得到的碎片先缓冲，直到遇到行结尾再解析。
-题目用 com^Dman^Dd 的例子，就是模拟“command\n”被拆成三段到达：'com'、'man'、'd\n'。你的服务器需要在多次 recv 后拼出完整命令再处理。
-为什么用 Ctrl+D 能做到“分段”
+TCP does not guarantee that “one application-layer send = one recv on the other side”. Data may arrive split into multiple chunks (low bandwidth, Nagle’s algorithm, MTU limits, kernel buffers, etc. can all cause segmentation).
 
-终端处于“规范模式”（默认）。Ctrl+D 是“行结束（EOF）控制字符”：
-当当前行里已经有输入（比如你打了 com），按 Ctrl+D 会把这行“立刻送出给 nc”，但不附加换行，也不会关闭连接。这就制造了“只发送 com”的一小段。
-当当前行是空的时按 Ctrl+D，才是“真正的 EOF”（read 返回 0），nc 会对套接字执行写半关闭（之后不能再发）。
-所以按键顺序 com Ctrl+D man Ctrl+D d 回车，nc 会依次发送：
-“com”
-“man”
-“d\r\n”（-C 会把回车转成 CRLF）
-这正是把一条命令拆成三段发送，模拟网络分片。
-你现在的代码已经满足这个需求吗
+IRC commands are terminated by a newline (CRLF or LF). The server must buffer fragments received across multiple recv calls, and only parse once it encounters the line ending.
 
-Client::readFromSocket() 会循环 recv 并把数据 append 到 _inbuf。
-popLine() 只有在读到行结束（CRLF 或 LF）才返回一条完整的行。
-这正是“聚合碎片、按行解析”的模式，能通过这个测试。
-怎么实际测试
+The example com^Dman^Dd is simulating that "command\n" arrives in three pieces: 'com', 'man', and 'd\n'. Your server needs to reassemble the full command across multiple recvs before processing it.
 
-连接：
+## Why Ctrl+D can produce “segmentation”
+
+The terminal is in “canonical mode” (default). Ctrl+D is the end-of-file (EOF) control character for line input:
+
+- If the current line already has input (for example you typed com), pressing Ctrl+D will send this line immediately to nc, without appending a newline, and it will not close the connection. This creates a small chunk that sends only com.
+
+- If the current line is empty and you press Ctrl+D, that is the real EOF (read returns 0). nc will perform a write half-close on the socket (after that, it can’t send any more).
+
+So with the keystroke sequence:
+com Ctrl+D man Ctrl+D d Enter, nc will send, in order:
+- "com"
+- "man"
+- "d
+" (-C converts Enter to CRLF)
+
+This splits one command into three sends, simulating network fragmentation.
+
+## Does your current code already satisfy this requirement?
+
+Client::readFromSocket() loops on recv and appends the data to _inbuf.
+
+popLine() only returns a complete line when it has read a line ending (CRLF or LF).
+
+This is exactly the “aggregate fragments, parse by line” approach, so it should pass this test.
+
+## How to test in practice
+
+Connect:
+
 nc -C 127.0.0.1 6667
-输入（每个 ^D 表示按一次 Ctrl+D）：
-PASS abc⏎
-NICK nick⏎
-USER user 0 * :hi⏎
-JOIN #test⏎
-com^Dman^Dd⏎
-预期：服务器不会在前两段就解析命令，直到收到最后的 d⏎（或 d 回车）才把整行 “command” 当作一条指令处理。
-小贴士
 
-仅“行中”按 Ctrl+D 会发送当前缓冲但不关闭；“空行”按 Ctrl+D 才是真 EOF，会导致你之后无法再发送任何内容（nc 的写半关闭）。所以测试分段时，确保 Ctrl+D 前有字符；最后一定要回车（或再输入 CRLF）结束命令行。
-如果想更直观看分段效果，可以临时在 readFromSocket() 里打印每次 recv 返回的字节数。
-总之，题目让你用 Ctrl+D 的目的，是利用终端的“行结束”语义，手工制造“同一条命令分多次送达”的场景，验证你的服务器是否正确“缓冲+拼装+按行解析”。
+Input (each ^D means press Ctrl+D once):
+- PASS abc ⏎
+- NICK nick ⏎
+- USER user 0 * :hi ⏎
+- JOIN #test ⏎
+- com^Dman^Dd ⏎
+
+Expected: the server should not parse the command after the first two fragments. Only when the final d⏎ (or d + Enter) arrives should it treat the full line "command" as a single instruction.
+
+## Tips
+
+- Pressing Ctrl+D in the middle of a line sends the current buffer but does not close. Pressing Ctrl+D on an empty line is the real EOF and will prevent you from sending anything afterward (nc does a write half-close). So when testing segmentation, make sure you press Ctrl+D while there is text on the line.
+- If you want to see the segmentation more clearly, you can temporarily print the number of bytes returned by each recv inside readFromSocket().
+
+In short: the reason the assignment asks you to use Ctrl+D is that it uses the terminal’s “end-of-line” behavior to manually create the scenario where “one command arrives in multiple deliveries”, to verify that your server correctly buffers + reassembles + parses by line.
